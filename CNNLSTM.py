@@ -1,4 +1,3 @@
-%tensorflow_version 1.x
 from keras.models import Sequential, Model
 from keras.layers import Embedding, Dense, Activation, Flatten, Conv1D, SpatialDropout1D, MaxPooling1D, AveragePooling1D, Bidirectional, merge, concatenate, Input, Dropout, LSTM
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
