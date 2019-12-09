@@ -11,7 +11,8 @@ import numpy as np
 from keras.preprocessing import sequence
 from collections import defaultdict
 import re
-
+from gensim.models import Word2Vec
+    
 
 def clean_text(text):
     '''Clean text by removing unnecessary characters and altering the format of words.'''
@@ -85,13 +86,13 @@ def f1_loss(y_true, y_pred):
     f1 = tf.where(tf.is_nan(f1), tf.zeros_like(f1), f1)
     return 1 - K.mean(f1)
 
-def model(embedding_size=200, max_words=200, y_dim=1, vocabulary_size=50,
+
+def w2vmodel(embedding_size=200, max_words=200, y_dim=1, vocabulary_size=50,
           num_filters=200, filter_sizes=[3,4,5], pool_padding='valid', dropout=0.5):
-    embed_input = Input(shape=(max_words,))
-    x = Embedding(vocabulary_size, embedding_size, input_length=max_words)(embed_input)
+    embed_input = Input(shape=(max_words,embedding_size))
     pooled_outputs = []
     for i in range(len(filter_sizes)):
-        conv = Conv1D(num_filters, kernel_size=filter_sizes[i], padding='valid', activation='relu')(x)
+        conv = Conv1D(num_filters, kernel_size=filter_sizes[i], padding='valid', activation='relu')(embed_input)
         conv = MaxPooling1D(pool_size=max_words-filter_sizes[i]+1)(conv)           
         pooled_outputs.append(conv)
     merge = concatenate(pooled_outputs)
@@ -105,6 +106,12 @@ def model(embedding_size=200, max_words=200, y_dim=1, vocabulary_size=50,
     x = Dense(y_dim, activation='softmax')(x)
 
     model = Model(inputs=embed_input,outputs=x)
+
+    # model.compile(optimizer='adam',loss = 'categorical_crossentropy', metrics = ['acc'])
+    # print(model.summary())
+    
+    from keras.utils import plot_model
+    plot_model(model, to_file='shared_input_layer.png')
     
     return model
 
@@ -112,7 +119,7 @@ def score_CNN_LSTM(X_train, y_train, X_test, y_test, min_count=1,
                    epochs = 100, batch_size=32, embedding_size=200, dropout=0.5, verbose=1):
     # inspired by https://github.com/mihirahlawat/Sentiment-Analysis
     # BB_twtr at SemEval-2017 Task 4: Twitter Sentiment Analysis with CNNs and LSTMs
-   
+    
     Xc = []
     tweet_lengths = []
     for line in X:
@@ -149,26 +156,31 @@ def score_CNN_LSTM(X_train, y_train, X_test, y_test, min_count=1,
         sequences.append(text_sequence)
 
     MAX_SEQUENCE_LENGTH = max_len
-    bodies_seq = sequence.pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
-    
+    w2v = Word2Vec([" ".join(X).split(" ")],size=200, window=2, min_count=1, workers=4)
+
+    bodies_seq = np.zeros([len(X),max(tweet_lengths),200])
+    for idx,tweet in enumerate(X):
+      for idx2,word in enumerate(tweet.split(" ")):
+        bodies_seq[idx,idx2,:] = w2v[word]
+                      
     K.tensorflow_backend._get_available_gpus()
 
-    mdl = model(embedding_size=embedding_size, max_words=MAX_SEQUENCE_LENGTH, vocabulary_size=len(vocabulary)+1,
-            y_dim=y_train.shape[1],filter_sizes = [3,4,5],dropout=0.5)
-    mdl.compile(loss=f1_loss, 
+    mdl = w2vmodel(embedding_size=200, max_words=MAX_SEQUENCE_LENGTH, vocabulary_size=len(vocabulary)+1,
+            y_dim=y_train.shape[1],filter_sizes = [3,4,5],dropout=0.1)
+    mdl.compile(loss=f1_loss,#'categorical_crossentropy', 
                 optimizer='adam', 
                 metrics=['acc',f1_m,precision_m, recall_m])
 
-    dt = datetime.now()
-    timestamp = "".join([str(x) for x in [dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second]])
 
     earlyStopping = EarlyStopping(monitor='val_loss', patience=5, verbose=0, mode='min')
-    mcp_save = ModelCheckpoint('cnn_lstm_'+timestamp+'.h5', verbose=0, monitor='val_loss',save_best_only=True, mode='min')
+    mcp_save = ModelCheckpoint('w2v_saved_model.h5', verbose=0, monitor='val_loss',save_best_only=True, mode='min')
     reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=0, epsilon=1e-4, mode='min')
 
 
-    history = mdl.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=batch_size, epochs=epochs, verbose=verbose,
-              callbacks=[mcp_save]
+    history = mdl.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=batch_size, epochs=epochs, 
+              callbacks=[
+                         #earlyStopping, 
+                         mcp_save]
               )
 
     return mdl.evaluate(X_test, y_test)
