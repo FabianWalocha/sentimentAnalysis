@@ -108,19 +108,7 @@ def model(embedding_size=200, max_words=200, y_dim=1, vocabulary_size=50,
     
     return model
 
-def score_CNN_LSTM(X_train, y_train, X_test, y_test, min_count=1, 
-                   epochs = 100, batch_size=32, embedding_size=200, dropout=0.5, verbose=1):
-    # inspired by https://github.com/mihirahlawat/Sentiment-Analysis
-    # BB_twtr at SemEval-2017 Task 4: Twitter Sentiment Analysis with CNNs and LSTMs
-   
-    Xc = []
-    tweet_lengths = []
-    for line in X:
-        cleaned = clean_text(line)
-        Xc.append(cleaned)
-        tweet_lengths.append(len(cleaned.split(" ")))
-    X = Xc
-
+def get_onehot(X, min_count):
     # inspired by https://github.com/saurabhrathor/InceptionModel_SentimentAnalysis/
     vocabulary = dict()
     count = defaultdict(int)
@@ -147,14 +135,39 @@ def score_CNN_LSTM(X_train, y_train, X_test, y_test, min_count=1,
         if len(text_sequence)>max_len:
             max_len=len(text_sequence)
         sequences.append(text_sequence)
+    return sequences, vocabulary, max_len
 
-    MAX_SEQUENCE_LENGTH = max_len
+def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3, 
+                   epochs = 50, batch_size=32, embedding_size=200, dropout=0.5, verbose=1):
+    # inspired by https://github.com/mihirahlawat/Sentiment-Analysis
+    # BB_twtr at SemEval-2017 Task 4: Twitter Sentiment Analysis with CNNs and LSTMs
+       
+    y_train = to_categorical(one_hot(" ".join(y_train),n=3),3)
+    y_val = to_categorical(one_hot(" ".join(y_val),n=3),3)
+    y_test = to_categorical(one_hot(" ".join(y_test),n=3),3)
+    
+    X = X_train+X_val+X_test
+    Xc = []
+    tweet_lengths = []
+    for line in X:
+        cleaned = clean_text(line)
+        Xc.append(cleaned)
+        tweet_lengths.append(len(cleaned.split(" ")))
+    X = Xc
+
+    # Get vocabulary and one_hot of training data
+    sequences, vocabulary, MAX_SEQUENCE_LENGTH = get_onehot(X, min_count=min_count)
     bodies_seq = sequence.pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
+    
+    # Return original indices
+    X_train = bodies_seq[:len(y_train)]
+    X_val = bodies_seq[len(y_train):(len(y_train)+len(y_val))]
+    X_test = bodies_seq[(len(y_train)+len(y_val)):]
     
     K.tensorflow_backend._get_available_gpus()
 
     mdl = model(embedding_size=embedding_size, max_words=MAX_SEQUENCE_LENGTH, vocabulary_size=len(vocabulary)+1,
-            y_dim=y_train.shape[1],filter_sizes = [3,4,5],dropout=0.5)
+            y_dim=y_train.shape[1],filter_sizes = [3,4,5], dropout=dropout)
     mdl.compile(loss=f1_loss, 
                 optimizer='adam', 
                 metrics=['acc',f1_m,precision_m, recall_m])
@@ -162,13 +175,11 @@ def score_CNN_LSTM(X_train, y_train, X_test, y_test, min_count=1,
     dt = datetime.now()
     timestamp = "".join([str(x) for x in [dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second]])
 
-    earlyStopping = EarlyStopping(monitor='val_loss', patience=5, verbose=0, mode='min')
     mcp_save = ModelCheckpoint('cnn_lstm_'+timestamp+'.h5', verbose=0, monitor='val_loss',save_best_only=True, mode='min')
-    reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=0, epsilon=1e-4, mode='min')
-
 
     history = mdl.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=batch_size, epochs=epochs, verbose=verbose,
               callbacks=[mcp_save]
               )
-
-    return mdl.evaluate(X_test, y_test)
+    
+    loss, acc, f1, prec, rec = mdl.evaluate(X_test, y_test)
+    return loss, acc, f1, prec, rec
