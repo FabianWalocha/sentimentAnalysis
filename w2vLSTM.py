@@ -203,7 +203,7 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     
     K.tensorflow_backend._get_available_gpus()
 
-    mdl = w2vmodel(embedding_size=bodies_seq.shape[2], max_words=MAX_SEQUENCE_LENGTH, vocabulary_size=len(vocabulary)+1,
+    mdl = w2vmodel(embedding_size=bodies_seq.shape[2], max_words=max(tweet_length), vocabulary_size=len(vocabulary)+1,
             y_dim=y_train.shape[1],filter_sizes = [3,4,5],dropout=0.1)
     mdl.compile(loss=f1_loss,
                 optimizer='adam', 
