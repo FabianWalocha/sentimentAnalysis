@@ -145,9 +145,9 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     # inspired by https://github.com/mihirahlawat/Sentiment-Analysis
     # BB_twtr at SemEval-2017 Task 4: Twitter Sentiment Analysis with CNNs and LSTMs
        
-    y_train = to_categorical(one_hot(" ".join(y_train),n=3),3)
-    y_val = to_categorical(one_hot(" ".join(y_val),n=3),3)
-    y_test = to_categorical(one_hot(" ".join(y_test),n=3),3)
+    y_train = np.array([[1,0,0] if val=='positive' else [0,1,0] if val=='neutral' else [0,0,1] if val=='negative' else None for val in y_train])
+    y_val = np.array([[1,0,0] if val=='positive' else [0,1,0] if val=='neutral' else [0,0,1] if val=='negative' else None for val in y_val])
+    y_test = np.array([[1,0,0] if val=='positive' else [0,1,0] if val=='neutral' else [0,0,1] if val=='negative' else None for val in y_test])
     
     X = X_train+X_val+X_test
     Xc = []
