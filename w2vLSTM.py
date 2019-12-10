@@ -176,8 +176,10 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     # Get vocabulary and one_hot of training data
     sequences, vocabulary, MAX_SEQUENCE_LENGTH = get_onehot(X_train)
     
+    print(X_train)
+    
     window_size = 2
-    w2v = Word2Vec([X_train+['<$>']], size=embedding_size, window=window_size, min_count=min_count, workers=4)
+    w2v = Word2Vec([" ".join(X_train+['<$>']).split(" ")], size=embedding_size, window=window_size, min_count=min_count, workers=4)
     
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
