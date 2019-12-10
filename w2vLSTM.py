@@ -152,7 +152,7 @@ def get_onehot(X, min_count=1):
 
 def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3, 
                    epochs = 50, batch_size=32, embedding_size=200, dropout=0.5, verbose=1):
-    # inspired by https://github.com/mihirahlawat/Sentiment-Analysis
+    # inspired by https://github.com/mihirahlawat/Sentiment-Analysis for the paper
     # BB_twtr at SemEval-2017 Task 4: Twitter Sentiment Analysis with CNNs and LSTMs
     
     y_train = to_categorical(one_hot(" ".join(y_train),n=3),3)
@@ -196,7 +196,11 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
             except:
                 bodies_seq[idx+idx2+idx3+1,inner,:] = w2v['<$>']
     
-                      
+    # W2V model as input for NN
+    X_train = bodies_seq[:len(y_train)]
+    X_val = bodies_seq[len(y_train):(len(y_train)+len(y_val))]
+    X_test = bodies_seq[(len(y_train)+len(y_val)):]
+    
     K.tensorflow_backend._get_available_gpus()
 
     mdl = w2vmodel(embedding_size=bodies_seq.shape[2], max_words=MAX_SEQUENCE_LENGTH, vocabulary_size=len(vocabulary)+1,
