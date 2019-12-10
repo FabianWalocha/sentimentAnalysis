@@ -10,6 +10,7 @@ from datetime import datetime
 import numpy as np
 from keras.preprocessing import sequence
 from keras.utils import to_categorical
+from keras.preprocessing.text import one_hot
 from collections import defaultdict
 import re
 
