@@ -9,6 +9,7 @@ from tensorflow.python.client import device_lib
 from datetime import datetime
 import numpy as np
 from keras.preprocessing import sequence
+from keras.utils import to_categorical
 from collections import defaultdict
 import re
 
