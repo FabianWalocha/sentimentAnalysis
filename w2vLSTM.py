@@ -179,7 +179,7 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     print(X_train)
     
     window_size = 2
-    w2v = Word2Vec([" ".join(X_train+['<$>']).split(" ")], size=embedding_size, window=window_size, min_count=min_count, workers=4)
+    w2v = Word2Vec([" ".join(X_train).split(" ")+['<$>']], size=embedding_size, window=window_size, min_count=min_count, workers=4)
     
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
