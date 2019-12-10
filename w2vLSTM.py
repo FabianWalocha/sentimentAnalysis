@@ -15,7 +15,7 @@ from collections import defaultdict
 import re
 from gensim.models import Word2Vec
 from keras.models import load_model
-
+import string 
     
 
 def clean_text(text):
@@ -176,11 +176,8 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     # Get vocabulary and one_hot of training data
     sequences, vocabulary, MAX_SEQUENCE_LENGTH = get_onehot(X_train)
     
-    w2vdat = [" ".join(X_train).split(" ")+['<$>']]
-    print(w2vdat[0][:100])
-    
     window_size = 2
-    w2v = Word2Vec(w2vdat, size=embedding_size, window=window_size, min_count=min_count, workers=4)
+    w2v = Word2Vec([" ".join(X_train).split(" ")+['<$>']],size=200, window=2, min_count=1, workers=4)
     
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
