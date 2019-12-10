@@ -13,6 +13,7 @@ from keras.utils import to_categorical
 from keras.preprocessing.text import one_hot
 from collections import defaultdict
 import re
+from keras.models import load_model
 
 
 def clean_text(text):
@@ -177,11 +178,18 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     dt = datetime.now()
     timestamp = "".join([str(x) for x in [dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second]])
 
-    mcp_save = ModelCheckpoint('cnn_lstm_'+timestamp+'.h5', verbose=0, monitor='val_loss',save_best_only=True, mode='min')
+    mcp_save = ModelCheckpoint('cnn_lstm.h5', verbose=0, monitor='val_loss',save_best_only=True, mode='min')
 
     history = mdl.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=batch_size, epochs=epochs, verbose=verbose,
               callbacks=[mcp_save]
               )
+    
+    mdl = load_model('cnn_lstm.h5', custom_objects={
+                                                      'f1_loss':f1_loss, 
+                                                      'f1_m':f1_m,
+                                                      'precision_m':precision_m,
+                                                      'recall_m':recall_m
+                                                       })
     
     loss, acc, f1, prec, rec = mdl.evaluate(X_test, y_test)
     return loss, acc, f1, prec, rec

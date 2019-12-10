@@ -14,6 +14,7 @@ from keras.preprocessing.text import one_hot
 from collections import defaultdict
 import re
 from gensim.models import Word2Vec
+from keras.models import load_model
 
     
 
@@ -176,7 +177,7 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     sequences, vocabulary, MAX_SEQUENCE_LENGTH = get_onehot(X_train)
     
     window_size = 2
-    w2v = Word2Vec([" ".join(X_train.append(['<$>']).split(" "))], size=embedding_size, window=window_size, min_count=min_count, workers=4)
+    w2v = Word2Vec([X_train+['<$>']], size=embedding_size, window=window_size, min_count=min_count, workers=4)
     
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
@@ -209,6 +210,14 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
 
     history = mdl.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=batch_size, epochs=epochs, 
               callbacks=[mcp_save])
+    
+    
+    mdl = load_model('cnn_lstm.h5', custom_objects={
+                                                      'f1_loss':f1_loss, 
+                                                      'f1_m':f1_m,
+                                                      'precision_m':precision_m,
+                                                      'recall_m':recall_m
+                                                       })
 
     loss, acc, f1, prec, rec = mdl.evaluate(X_test, y_test)
     return loss, acc, f1, prec, rec
