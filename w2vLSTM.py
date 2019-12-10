@@ -176,14 +176,16 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     # Get vocabulary and one_hot of training data
     sequences, vocabulary, MAX_SEQUENCE_LENGTH = get_onehot(X_train)
     
-    print(X_train)
+    w2vdat = [" ".join(X_train).split(" ")+['<$>']]
+    print(w2vdat[:100])
     
     window_size = 2
-    w2v = Word2Vec([" ".join(X_train).split(" ")+['<$>']], size=embedding_size, window=window_size, min_count=min_count, workers=4)
+    w2v = Word2Vec(w2vdat, size=embedding_size, window=window_size, min_count=min_count, workers=4)
     
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
         for inner,word in enumerate(tweet.split(" ")):
+            print(word)
             bodies_seq[idx,inner,:] = w2v[word]
     for idx2, tweet in enumerate(X_val):
         for inner, word in enumerate(tweet.split(" ")):
@@ -191,7 +193,6 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
                 bodies_seq[idx+idx2+1,inner,:] = w2v[word]
             except KeyError:
                 bodies_seq[idx+idx2+1,inner,:] = w2v['<$>']
-                
     for idx3, tweet in enumerate(X_test):
         for inner, word in enumerate(tweet.split(" ")):
             try:
