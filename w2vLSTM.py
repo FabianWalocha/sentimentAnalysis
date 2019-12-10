@@ -177,7 +177,7 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     sequences, vocabulary, MAX_SEQUENCE_LENGTH = get_onehot(X_train)
     
     w2vdat = [" ".join(X_train).split(" ")+['<$>']]
-    print(w2vdat[:100])
+    print(w2vdat[0][:5])
     
     window_size = 2
     w2v = Word2Vec(w2vdat, size=embedding_size, window=window_size, min_count=min_count, workers=4)
