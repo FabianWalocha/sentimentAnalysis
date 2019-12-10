@@ -117,7 +117,7 @@ def w2vmodel(embedding_size=200, max_words=200, y_dim=1, vocabulary_size=50,
     return model
 
 
-def get_onehot(X, min_count):
+def get_onehot(X, min_count=1):
     # inspired by https://github.com/saurabhrathor/InceptionModel_SentimentAnalysis/
     vocabulary = dict()
     count = defaultdict(int)
@@ -179,7 +179,6 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
         for inner,word in enumerate(tweet.split(" ")):
-            if word not in w2v.vocab
             bodies_seq[idx,inner,:] = w2v[word]
     for idx2, tweet in enumerate(X_val):
         for inner, word in enumerate(tweet.split(" ")):
