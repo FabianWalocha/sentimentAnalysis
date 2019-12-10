@@ -215,7 +215,7 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
               callbacks=[mcp_save])
     
     
-    mdl = load_model('cnn_lstm.h5', custom_objects={
+    mdl = load_model('w2v_saved_model.h5', custom_objects={
                                                       'f1_loss':f1_loss, 
                                                       'f1_m':f1_m,
                                                       'precision_m':precision_m,
