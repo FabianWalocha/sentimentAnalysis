@@ -57,6 +57,7 @@ def clean_text(text):
     text = re.sub(r"gonna", "going to", text)
     text = re.sub(r"ima", "i am going to", text)
     text = re.sub(r"\/\w+", "", text)
+    text = re.sub(' +', ' ', text)
     return text
 
 def recall_m(y_true, y_pred):
