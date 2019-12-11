@@ -177,14 +177,16 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     sequences, vocabulary, MAX_SEQUENCE_LENGTH = get_onehot(X_train)
     
     window_size = 2
-    w2v = Word2Vec([" ".join(X_train).split(" ")+['<$>']],size=200, window=2, min_count=1, workers=4)
+    w2v = Word2Vec([tweet.split() for tweet in X_train]+[['<$>']],size=200, window=2, min_count=1, workers=4)
     
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
         for inner,word in enumerate(tweet.split(" ")):
+            # trained words are all in vocab
             bodies_seq[idx,inner,:] = w2v[word]
     for idx2, tweet in enumerate(X_val):
         for inner, word in enumerate(tweet.split(" ")):
+            # words in val and test might not, assign special sign in that case
             try:
                 bodies_seq[idx+idx2+1,inner,:] = w2v[word]
             except KeyError:
@@ -212,7 +214,7 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     mcp_save = ModelCheckpoint('w2v_saved_model.h5', verbose=0, monitor='val_loss',save_best_only=True, mode='min')
 
     history = mdl.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=batch_size, epochs=epochs, 
-              callbacks=[mcp_save])
+              callbacks=[mcp_save], verbose=verbose)
     
     
     mdl = load_model('w2v_saved_model.h5', custom_objects={
