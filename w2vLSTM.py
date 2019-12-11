@@ -182,8 +182,11 @@ def score_CNN_LSTM(X_train, y_train, X_val, y_val, X_test, y_test, min_count=3,
     bodies_seq = np.zeros([len(X),max(tweet_lengths),embedding_size])
     for idx,tweet in enumerate(X_train):
         for inner,word in enumerate(tweet.split(" ")):
-            # trained words are all in vocab
-            bodies_seq[idx,inner,:] = w2v[word]
+            try:
+                # trained words are all in vocab
+                bodies_seq[idx,inner,:] = w2v[word]
+            except KeyError:
+                print(word)
     for idx2, tweet in enumerate(X_val):
         for inner, word in enumerate(tweet.split(" ")):
             # words in val and test might not, assign special sign in that case
